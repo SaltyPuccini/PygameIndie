@@ -1,7 +1,11 @@
 import pygame
+
+from support import *
 from tile import Tile
 from player import Player
 from settings import *
+from random import choice
+
 from debug import debug
 
 
@@ -17,14 +21,28 @@ class Level:
         self.create_map()
 
     def create_map(self):
-        for row_index, row in enumerate(WORLD_MAP):
-            for column_index, column in enumerate(row):
-                x = column_index * TILESIZE
-                y = row_index * TILESIZE
-                if column == 'x':
-                    Tile((x, y), [self.visible_sprites, self.obstacle_sprites])
-                if column == 'p':
-                    self.player = Player((x, y), [self.visible_sprites], self.obstacle_sprites)
+        layouts = {
+            'Ograniczenia': import_csv_layout('dungeon_csv/Projekt_Mapy_Ograniczenia.csv'),
+            'Obiekty': import_csv_layout('dungeon_csv/Projekt_Mapy_Obiekty.csv')
+        }
+        graphics = {
+            'Obiekty': import_folder('graphics/objects')
+        }
+        for style, layout in layouts.items():
+            for row_index, row in enumerate(layout):
+                for column_index, column in enumerate(row):
+                    if column != '-1':
+                        x = column_index * TILESIZE
+                        y = row_index * TILESIZE
+
+                        if style == 'Ograniczenia':
+                            Tile((x,y), [self.obstacle_sprites], 'invisible')
+                        if style == 'Obiekty' and int(column) < len((graphics['Obiekty'])):
+                            print(column)
+                            Tile((x,y), [self.visible_sprites, self.obstacle_sprites], 'details', graphics['Obiekty'][int(column)].convert_alpha())
+
+
+        self.player = Player((700, 800), [self.visible_sprites], self.obstacle_sprites)
 
     def run(self):
         self.visible_sprites.custom_draw(self.player)
@@ -41,14 +59,14 @@ class YSortCameraGroup(pygame.sprite.Group):
         self.offset = pygame.math.Vector2(100, 200)
 
         # floor
-        self.floor_surface = pygame.image.load('na-li-atlas-academy-ground.jpg').convert()
+        self.floor_surface = pygame.image.load('graphics/tilemap/ground1.png').convert()
         self.floor_rect = self.floor_surface.get_rect(topleft=(0, 0))
 
     def custom_draw(self, player):
         self.offset.x = player.rect.centerx - self.half_width
         self.offset.y = player.rect.centery - self.half_height
 
-        #draw floor
+        # draw floor
         floor_offset_position = self.floor_rect.topleft - self.offset
         self.display_surface.blit(self.floor_surface, floor_offset_position)
 
